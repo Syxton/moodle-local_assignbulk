@@ -595,10 +595,10 @@ class bulk_uploader {
         $ident = $this->ident;
         $useridents = [];
         $userfiledata = array();
-        $unique_ident = "";
         $participants = $this->assign->list_participants(0, false);
 
         foreach ($participants as $user) {
+            $unique_ident = null;
             if ($ident !== "gradescope" && empty($user->$ident)) {
                 continue;
             }
@@ -617,17 +617,20 @@ class bulk_uploader {
             }
 
             if (isset($useridents[$unique_ident])) {
-                $a = ['ident' => $ident, 'value' => $user->$ident];
+                $a = ['ident' => $ident, 'value' => $unique_ident];
                 throw new moodle_exception('identnotunique', 'local_assignbulk', $this->errorurl, $a);
             }
 
             if (!empty($userfiledata["original"])){
                 $user->originalfilename = $userfiledata["original"];
             }
-            $useridents[$unique_ident] = $user;
+
+            if (!empty($unique_ident)) {
+                $useridents[$unique_ident] = $user;
+            }
         }
 
-        if (!empty($unique_ident)) {
+        if (!empty($useridents)) {
             $this->_useridents = $useridents;
         }
     }
@@ -642,7 +645,7 @@ class bulk_uploader {
         $lastline = ""; $filename = ""; $email = ""; $orig = "";
         foreach($linebyline as $line) {
             if (strstr($line, ":submitters:")) {
-                $filename = $lastline; // Filename always comes before :submitters:.
+                $filename = preg_replace("/\.[^.]+$/", "", $lastline); // Filename always comes before :submitters:.
                 $email = ""; // New filename, reset email.
                 $orig = ""; // New filename, reset original filename.
             }
@@ -652,14 +655,12 @@ class bulk_uploader {
             if (strstr($line, ":original_filename:")) {
                 $orig = trim(str_replace(":original_filename: ", "", $line)); // Get original filename.
             }
-            if ($email == $user->email && !empty($filename) && !empty($orig)) {
-                return array("filename" => preg_replace("/\.[^.]+$/", "", $filename),
-                             "email" => $email,
+            if (!empty($filename) && !empty($orig) && $email == $user->email) {
+                return array("filename" => $filename,
                              "original" => $orig);
             }
             $lastline = trim($line);
         }
-        return array();
     }
 
     /**

@@ -27,7 +27,8 @@ define('NO_OUTPUT_BUFFERING', true);
 require_once('../../config.php');
 require_once($CFG->dirroot . '/mod/assign/locallib.php');
 
-use \mod_assign\output\assign_header;
+
+//use \mod_assign\output\assign_header;  // Uncomment for Moodle 4.+
 
 $id = required_param('id', PARAM_INT);
 
