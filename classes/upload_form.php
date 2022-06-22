@@ -55,6 +55,7 @@ class upload_form extends \moodleform {
             'username' => get_string('username'),
             'idnumber' => get_string('idnumber'),
             'email' => get_string('email'),
+            'gradescope' => get_string('gradescope', "local_assignbulk"),
         ];
         $mform->addElement('select', 'identifier', get_string('identifier', 'local_assignbulk'), $options);
 

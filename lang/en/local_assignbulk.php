@@ -27,10 +27,11 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Assignment Bulk Upload';
 $string['bulkuploadsubmissions'] = 'Bulk upload submissions';
+$string['gradescope'] = "GradeScope Export";
 // TODO: this is terrible, fix it!
 $string['uploadhelp'] = '
-<p>Using this tool, you can upload assignment submissions as files. Note that this only works for the <strong>File</strong> submission type.</p>
-<p>You can upload individual files, a ZIP containing the submission files, or multiple ZIP files containing multiple file submissions for each student. You should name each submission file with some way to identify the student, either with their username, ID number, or email address.</p>
+<p>Upload submissions for assignments that are set to accept the <strong>File</strong> submission type.</p>
+<p>You can upload individual files, a ZIP containing the submission files, multiple ZIP files containing multiple file submissions for each student, or Gradescope exports. You should name each submission file with some way to identify the student, either with their username, ID number, email address, or using the metadata from a GradeScope Export file.</p>
 <p>To submit multiple files per student, you can use folders.</p>
 ';
 $string['uploadcomplete'] = '<p><strong>Upload complete.</strong> The following users have had their submission updated with these files:</p>';

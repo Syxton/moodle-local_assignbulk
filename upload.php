@@ -27,6 +27,8 @@ define('NO_OUTPUT_BUFFERING', true);
 require_once('../../config.php');
 require_once($CFG->dirroot . '/mod/assign/locallib.php');
 
+use \mod_assign\output\assign_header;
+
 $id = required_param('id', PARAM_INT);
 
 list ($course, $cm) = get_course_and_cm_from_cmid($id, 'assign');

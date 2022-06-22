@@ -68,6 +68,12 @@ class bulk_uploader {
     private $ident;
 
     /**
+     * The metafile from gradescope if it exists.
+     * @var string
+     */
+    private $metafile;
+
+    /**
      * A convenient container for our staging file area's identifying fields
      * @var array [$contextid, 'local_assignbulk', 'staging', $itemid]
      */
@@ -263,6 +269,7 @@ class bulk_uploader {
 
         $subpaths = [];
 
+        $this->find_meta_file($files);
         $this->progress->start_progress('Walking over '.$directory, count($files));
         foreach ($files as $file) {
 
@@ -335,6 +342,7 @@ class bulk_uploader {
             $user = $this->user_for_ident($userident);
             $this->simplify_user_paths($files, $userident);
             $this->delete_empty_directories($files, $userid);
+            $this->rename_files($files, $user); // Gradescope original name changer.
 
             if ($this->commit) {
                 $feedback[] = $this->push_files_to_assign($files, $user);
@@ -343,8 +351,14 @@ class bulk_uploader {
                 $submissions = [];
                 foreach ($files as $file) {
                     $filename = $this->filepaths[$file->get_contenthash()];
+                    if (!empty($user->originalfilename)) {
+                        $showfilename = $user->originalfilename;
+                    } else {
+                        $showfilename = $file->get_filename();
+                    }
+
                     $submissions[] = [
-                        'filename' => $file->get_filepath() . $file->get_filename(),
+                        'filename' => $file->get_filepath() . $showfilename,
                         'rawImages' => array_key_exists($filename, $this->rawimages)
                     ];
                 }
@@ -517,6 +531,25 @@ class bulk_uploader {
     }
 
     /**
+     * If a Gradescope file contains alternate filenames, let's replace them here.
+     * @param  stored_file[] $files  The files that are being submitted for this user
+     * @param  array  User's submission data.
+     */
+    protected function rename_files($files, $user) {
+        $fs = get_file_storage();
+        $contextid = $this->assign->get_context()->id;
+
+        if ($user->originalfilename) { // An original filename exists.
+            $filesanddirs = $fs->get_area_files($contextid, 'local_assignbulk', 'submissions', $user->id);
+            foreach ($filesanddirs as $savedfiles) { // Should only be one file.
+                if (!$savedfiles->is_directory()) {
+                    $savedfiles->rename($savedfiles->get_filepath(), $user->originalfilename);
+                }
+            }
+        }
+    }
+
+    /**
      * Submissions can be regular files or directories; we compare the name of the directory or the name of the file without
      * extension to the user identifier to determine whether or not this is a valid submission file.
      * @param  stored_file $file [description]
@@ -561,20 +594,93 @@ class bulk_uploader {
     private function _init_useridents() {
         $ident = $this->ident;
         $useridents = [];
+        $userfiledata = array();
+        $unique_ident = "";
         $participants = $this->assign->list_participants(0, false);
 
         foreach ($participants as $user) {
-            if (empty($user->$ident)) {
+            if ($ident !== "gradescope" && empty($user->$ident)) {
                 continue;
             }
-            if (isset($useridents[$user->$ident])) {
+
+            if ($ident === "gradescope") {
+                // open yml file and see if user->email is attached to a file #.
+                if (empty($this->metafile)) {
+                    continue;
+                }
+                $userfiledata = $this->get_gradescope_file_number($user);
+                if (!empty($userfiledata)) {
+                    $unique_ident = $userfiledata["filename"];
+                }
+            } else {
+                $unique_ident = $user->$ident;
+            }
+
+            if (isset($useridents[$unique_ident])) {
                 $a = ['ident' => $ident, 'value' => $user->$ident];
                 throw new moodle_exception('identnotunique', 'local_assignbulk', $this->errorurl, $a);
             }
-            $useridents[$user->$ident] = $user;
+
+            if (!empty($userfiledata["original"])){
+                $user->originalfilename = $userfiledata["original"];
+            }
+            $useridents[$unique_ident] = $user;
         }
 
-        $this->_useridents = $useridents;
+        if (!empty($unique_ident)) {
+            $this->_useridents = $useridents;
+        }
+    }
+
+    /**
+     * Search through gradescope metadata and provide the filename that relates to the given user if found.
+     * @param  stdClass $user The user object to move the file to. Only $id is actually needed, though.
+     * @return array  User's submission data.
+     */
+    private function get_gradescope_file_number($user) {
+        $linebyline = preg_split("/\r\n|\r|\n/", $this->metafile);
+        $lastline = ""; $filename = ""; $email = ""; $orig = "";
+        foreach($linebyline as $line) {
+            if (strstr($line, ":submitters:")) {
+                $filename = $lastline; // Filename always comes before :submitters:.
+                $email = ""; // New filename, reset email.
+                $orig = ""; // New filename, reset original filename.
+            }
+            if (strstr($line, ":email:")) {
+                $email = trim(str_replace(":email: ", "", $line)); // Get email address.
+            }
+            if (strstr($line, ":original_filename:")) {
+                $orig = trim(str_replace(":original_filename: ", "", $line)); // Get original filename.
+            }
+            if ($email == $user->email && !empty($filename) && !empty($orig)) {
+                return array("filename" => preg_replace("/\.[^.]+$/", "", $filename),
+                             "email" => $email,
+                             "original" => $orig);
+            }
+            $lastline = trim($line);
+        }
+        return array();
+    }
+
+    /**
+     * Loops through files searching for a gradescope metadata (.yml) file.
+     * If it is found, the global var metafile is given the metafile contents.
+     * @param  array $files The array of files to loop through.
+     */
+    protected function find_meta_file($files) {
+        if (!empty($this->metafile)) {
+            return;
+        }
+
+        foreach ($files as $file) {
+            if ($file->is_directory()) {
+                continue;
+            }
+
+            if (strstr($file->get_filename(), ".yml")) {
+                $this->metafile = $file->get_content();
+            }
+        }
     }
 
     /**
@@ -684,7 +790,12 @@ class bulk_uploader {
         } else {
             $userfb['submissions'] = [];
             foreach ($files as $file) {
-                $userfb['submissions'][] = ['filename' => $file->get_filepath() . $file->get_filename(),
+                if (!empty($user->originalfilename)) {
+                    $showfilename = $user->originalfilename;
+                } else {
+                    $showfilename = $file->get_filename();
+                }
+                $userfb['submissions'][] = ['filename' => $file->get_filepath() . $showfilename,
                 'rawImages' => $rawimages];
             }
         }
