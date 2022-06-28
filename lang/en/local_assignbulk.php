@@ -26,7 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Assignment Bulk Upload';
-$string['bulkuploadsubmissions'] = 'Bulk upload submissions';
+$string['bulkuploadsubmissions'] = 'Bulk Submission Uploader';
 $string['gradescope'] = "GradeScope Export";
 // TODO: this is terrible, fix it!
 $string['uploadhelp'] = '
@@ -34,9 +34,11 @@ $string['uploadhelp'] = '
 <p>You can upload individual files, a ZIP containing the submission files, multiple ZIP files containing multiple file submissions for each student, or Gradescope exports. You should name each submission file with some way to identify the student, either with their username, ID number, email address, or using the metadata from a GradeScope Export file.</p>
 <p>To submit multiple files per student, you can use folders.</p>
 ';
-$string['uploadcomplete'] = '<p><strong>Upload complete.</strong> The following users have had their submission updated with these files:</p>';
-$string['uploadpreview'] = '<p><strong>This is a preview.</strong> The following users will have their submission updated with these files:</p>';
-$string['warnings'] = '<p class="warning">The following files were not processed:</p>';
+$string['resubmit'] = "Submissions file has been processed.  Re-submit Bulk upload file";
+$string['submit'] = "Submission file has not been processed.  This is only a preview.";
+$string['uploadcomplete'] = '<p><strong>Upload complete.</strong><br />The following users have had their submission updated with these files:</p>';
+$string['uploadpreview'] = '<p><strong>This is a preview.</strong><br />The following users will have their submission updated with these files:</p>';
+$string['warnings'] = '<p class="warning">The following files were not matched with a user:</p>';
 $string['identifier'] = 'Identify user by';
 $string['invalidident'] = 'Not a valid {$a}';
 $string['invaliduser'] = '{$a} is not a submitter in this assignment';

@@ -55,7 +55,7 @@ if ($mform->is_cancelled()) {
     redirect($continue);
 }
 
-$subhead = $OUTPUT->heading(get_string('bulkuploadsubmissions', 'local_assignbulk'), 3);
+$subhead = "<br />" . $OUTPUT->heading(get_string('bulkuploadsubmissions', 'local_assignbulk'), 3);
 echo $output->render(new assign_header($assign->get_instance(),
                                               $context,
                                               false,
@@ -63,9 +63,7 @@ echo $output->render(new assign_header($assign->get_instance(),
                                               null,
                                               $subhead));
 
-
 $showform = true;
-
 if ($data = $mform->get_data()) {
     $commit = isset($data->submitbutton);
     $uploader = new local_assignbulk\bulk_uploader($assign, $data->identifier);
@@ -85,6 +83,13 @@ if ($data = $mform->get_data()) {
 }
 
 if ($showform) {
+    if ($data = $mform->get_data()) {
+        if ($feedback->preview) {
+            echo "<br />" . $OUTPUT->heading(get_string('submit', 'local_assignbulk'), 3);
+        } else {
+            echo "<br />" . $OUTPUT->heading(get_string('resubmit', 'local_assignbulk'), 3);
+        }
+    }
     echo $OUTPUT->render_from_template('local_assignbulk/upload', []);
 
     $data = new stdClass;

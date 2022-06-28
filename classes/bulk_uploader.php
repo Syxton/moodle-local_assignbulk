@@ -390,7 +390,9 @@ class bulk_uploader {
             if ($this->is_raw_images($file)) {
                 continue;
             }
-
+            if (strstr($file->get_filename(), ".yml")) {
+                continue;
+            }
             $remaining[] = $file->get_filepath() . $file->get_filename();
         }
 
