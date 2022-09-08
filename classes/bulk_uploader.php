@@ -700,6 +700,8 @@ class bulk_uploader {
         $userdir = new stdClass;
         $userdir->contextid = $contextid;
         $userdir->itemid = $user->id;
+        $userdir->userid = $user->id;
+        $userdir->author = fullname($user, true);
         $userdir->component = 'local_assignbulk';
         $userdir->filearea = 'submissions';
 
