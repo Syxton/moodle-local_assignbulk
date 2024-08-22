@@ -28,7 +28,7 @@ require_once('../../config.php');
 require_once($CFG->dirroot . '/mod/assign/locallib.php');
 
 
-//use \mod_assign\output\assign_header;  // Uncomment for Moodle 4.+
+use \mod_assign\output\assign_header;
 
 $id = required_param('id', PARAM_INT);
 
