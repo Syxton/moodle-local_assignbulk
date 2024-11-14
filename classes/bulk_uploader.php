@@ -351,11 +351,11 @@ class bulk_uploader {
                 $submissions = [];
                 foreach ($files as $file) {
                     $filename = $this->filepaths[$file->get_contenthash()];
+                    $showfilename = $file->get_filename();
                     if (!empty($user->originalfilename)) {
                         $showfilename = $user->originalfilename;
-                    } else {
-                        $showfilename = $file->get_filename();
                     }
+                    $showfilename = empty(trim($showfilename)) ? $filename : $showfilename;
 
                     $submissions[] = [
                         'filename' => $file->get_filepath() . $showfilename,
